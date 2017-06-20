@@ -108,8 +108,9 @@ def main(args):
                 reward_batch = Variable(
                     torch.from_numpy(transitions[:, 3])).float()
 
+                flag = (next_batch != None)
                 non_final_mask = data_utils.ByteTensor(
-                    (next_batch != None).astype(int).tolist())
+                    flag.astype(int).tolist())
                 non_final_states = next_batch[next_batch != None]
                 current_Q_vec = model(current_batch).gather(1, action_batch)
                 next_Q_vec = Variable(torch.zeros(
@@ -142,7 +143,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_episodes', type=int,
-                        default=1, help='Number of episodes to train')
+                        default=1000, help='Number of episodes to train')
     parser.add_argument('--gamma', type=float, default=0.99,
                         help='Decay rate of reward function')
     parser.add_argument('--lr', type=float, default=0.1,
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     parser.add_argument('--eps_decay', type=float, default=200,
                         help='Decay rate of epsilon')
     parser.add_argument('--memo_capacity', type=int,
-                        default=1000, help='Memory capacity')
+                        default=10000, help='Memory capacity')
     parser.add_argument('--grid_shape', type=int,
                         default=10, help='grid shape')
     parser.add_argument('--batch_size', type=int,
