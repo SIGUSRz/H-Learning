@@ -93,7 +93,6 @@ def main(args):
                 current_state, dtype=int) * np.ones(1, dtype=int))
             action = model.select_action(current_vec)
             steps += 1
-            # print(action.numpy())
             next_state, reward, done = env.step(action)
             total_reward += reward
             if done:

@@ -167,9 +167,6 @@ class DQN(Model):
         encoded_state = np.zeros(
             (state.shape[0], 1, self.grid_shape[0], self.grid_shape[1]), dtype=int)
         state_index = np.unravel_index(state, self.grid_shape)
-        # encoded_state[:, 0, -1, :] = -1.
-        # encoded_state[:, 0, -1, 0] = 0.
-        # encoded_state[:, 0, -1, -1] = 0.
         if np.asarray(state_index[0]) != ():
             encoded_state[np.arange(len(state_index[0])),
                           0, state_index[0], state_index[1]] = 1.
