@@ -153,7 +153,8 @@ class DQN(Model):
         pass
 
     def forward(self, state):
-        x = Variable(torch.from_numpy(self._encode_state(state))).type(data_utils.Tensor)
+        x = Variable(torch.from_numpy(self._encode_state(state))
+                     ).type(data_utils.Tensor)
         if self.use_cuda:
             x.cuda()
         x = F.relu(self.conv1(x))

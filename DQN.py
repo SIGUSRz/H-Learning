@@ -66,6 +66,7 @@ class ReplayMemory(object):
     def __len__(self):
         return len(self.memory)
 
+
 def main(args):
     env = CliffWalkingEnv((args.grid_shape, args.grid_shape))
     args.num_states = int(env.nS)
@@ -102,14 +103,18 @@ def main(args):
             if len(memory.memory) >= args.batch_size:
                 transitions = np.asarray(memory.sample(args.batch_size))
                 current_batch = transitions[:, 0].astype(int)
-                action_batch = Variable(torch.from_numpy(transitions[:, 1].astype(int))).unsqueeze(1)
+                action_batch = Variable(torch.from_numpy(
+                    transitions[:, 1].astype(int))).unsqueeze(1)
                 next_batch = transitions[:, 2].astype(int)
-                reward_batch = Variable(torch.from_numpy(transitions[:, 3])).float()
+                reward_batch = Variable(
+                    torch.from_numpy(transitions[:, 3])).float()
 
-                non_final_mask = data_utils.ByteTensor((next_batch != None).astype(int).tolist())
+                non_final_mask = data_utils.ByteTensor(
+                    (next_batch != None).astype(int).tolist())
                 non_final_states = next_batch[next_batch != None]
                 current_Q_vec = model(current_batch).gather(1, action_batch)
-                next_Q_vec = Variable(torch.zeros(args.batch_size).type(data_utils.Tensor))
+                next_Q_vec = Variable(torch.zeros(
+                    args.batch_size).type(data_utils.Tensor))
                 next_Q_vec[non_final_mask] = model(non_final_states).max(1)[0]
                 target = next_Q_vec * args.gamma + reward_batch
                 loss = F.smooth_l1_loss(current_Q_vec, target)
