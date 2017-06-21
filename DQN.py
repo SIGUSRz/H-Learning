@@ -105,6 +105,7 @@ def main(args):
             current_state = next_state
             if len(memory.memory) >= args.batch_size:
                 transitions = np.asarray(memory.sample(args.batch_size))
+                terminal = args.grid_shape * args.grid_shape - 1
                 current_batch = transitions[:, 0].astype(int)
                 action_batch = Variable(torch.from_numpy(
                     transitions[:, 1].astype(int))).unsqueeze(1)
@@ -113,8 +114,8 @@ def main(args):
                     torch.from_numpy(transitions[:, 3])).float()
 
                 non_final_mask = data_utils.ByteTensor(
-                    (next_batch != args.grid_shape * args.grid_shape - 1).tolist())
-                non_final_states = next_batch[next_batch != None]
+                    (next_batch != terminal).tolist())
+                non_final_states = next_batch[next_batch != terminal]
                 current_Q_vec = model(current_batch, False).gather(1, action_batch)
                 next_Q_vec = Variable(torch.zeros(
                     args.batch_size).type(data_utils.Tensor))
