@@ -41,9 +41,9 @@ def render_single(model, env):
     # env.render()
     # time.sleep(0.25)
     env.step(action)
-    print("Episode reward: %f" % episode_reward)
-    f = open('output.txt', 'a')
-    f.write("Episode_reward: %s" % str(episode_reward))
+    print("Final reward: %f" % episode_reward)
+    f = open('loss.txt', 'a')
+    f.write("Final Reward: %s\n" % str(episode_reward))
     f.close()
 
 
@@ -108,10 +108,10 @@ def main(args):
                 terminal = args.grid_shape * args.grid_shape - 1
                 current_batch = transitions[:, 0].astype(int)
                 action_batch = Variable(torch.from_numpy(
-                    transitions[:, 1].astype(int))).unsqueeze(1)
+                    transitions[:, 1].astype(int))).type(data_utils.LongTensor).unsqueeze(1)
                 next_batch = transitions[:, 2].astype(int)
                 reward_batch = Variable(
-                    torch.from_numpy(transitions[:, 3])).float()
+                    torch.from_numpy(transitions[:, 3])).type(data_utils.FloatTensor)
 
                 non_final_mask = data_utils.ByteTensor(
                     (next_batch != terminal).tolist())
@@ -156,7 +156,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_episodes', type=int,
-                        default=50, help='Number of episodes to train')
+                        default=300, help='Number of episodes to train')
     parser.add_argument('--gamma', type=float, default=0.99,
                         help='Decay rate of reward function')
     parser.add_argument('--lr', type=float, default=0.1,
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     parser.add_argument('--memo_capacity', type=int,
                         default=10000, help='Memory capacity')
     parser.add_argument('--grid_shape', type=int,
-                        default=10, help='grid shape')
+                        default=5, help='grid shape')
     parser.add_argument('--batch_size', type=int,
                         default=128, help='Batch Size')
     args = parser.parse_args()
