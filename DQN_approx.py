@@ -92,7 +92,7 @@ def main(args):
     args.use_cuda = data_utils.use_cuda
 
     memory = ReplayMemory(args.memo_capacity)
-    model = model_zoo.DQN(args)
+    model = model_zoo.DQN_tabular(args)
     if data_utils.use_cuda:
         model.cuda()
     optimizer = optim.RMSprop(model.parameters())
@@ -180,7 +180,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_episodes', type=int,
-                        default=300, help='Number of episodes to train')
+                        default=500, help='Number of episodes to train')
     parser.add_argument('--gamma', type=float, default=0.99,
                         help='Decay rate of reward function')
     parser.add_argument('--lr', type=float, default=0.1,
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('--memo_capacity', type=int,
                         default=10000, help='Memory capacity')
     parser.add_argument('--grid_shape', type=int,
-                        default=10, help='grid shape')
+                        default=5, help='grid shape')
     parser.add_argument('--batch_size', type=int,
                         default=128, help='Batch Size')
     args = parser.parse_args()

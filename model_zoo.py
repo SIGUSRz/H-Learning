@@ -136,12 +136,12 @@ class MLP(Model):
             return int(Q_vec.max(1)[1].data.numpy())
 
 
-class DQN(Model):
+class DQN_tabular(Model):
     def __init__(self, args):
         super(DQN, self).__init__(args)
         self.grid_shape = (args.grid_shape, args.grid_shape)
         self.conv1 = nn.Conv2d(1, 4, kernel_size=3, stride=1)
-        self.bn1 = nn.BatchNorm2d(4)
+        self.conv2 = nn.Conv2d(4, 4, kernel_size=3, stride=1)
         self.output = nn.Linear((self.grid_shape[0] - 2) ** 2 * 4, 9)
         self.eps_start = args.eps_start
         self.eps_end = args.eps_end
@@ -159,6 +159,7 @@ class DQN(Model):
         if self.use_cuda:
             x.cuda()
         x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
         Q_vec = self.output(x.view(x.size(0), -1))
         return Q_vec
 
