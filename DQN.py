@@ -16,17 +16,28 @@ import data_utils
 
 
 def render_single(model, env):
+    """Run policy and paint steps
+        Parameters
+        ----------
+        env: environment object
+        model: trained model, model_zoo.Model
+        Returns
+        -------
+        None
+    """
     episode_reward = 0
     state = env.reset()
     done = False
     action = None
     flag = None
+    # Wheter to visualize the step
     if torch.cuda.is_available():
-        flag = False
+        paint_flag = False
     else:
-        flag = True
+        paint_flag = True
+
     while not done:
-        env.render(animation=flag)
+        env.render(animation=paint_flag)
         time.sleep(0.25)
         if torch.cuda.is_available():
             state_vec = model(np.asarray(state, dtype=int)
@@ -38,8 +49,6 @@ def render_single(model, env):
             action = int(state_vec.data.max(1)[1].numpy())
         state, reward, done = env.step(action)
         episode_reward += reward
-    # env.render()
-    # time.sleep(0.25)
     env.step(action)
     print("Final reward: %f" % episode_reward)
     f = open('loss.txt', 'a')
@@ -48,6 +57,14 @@ def render_single(model, env):
 
 
 class ReplayMemory(object):
+    """Replay memory sample class
+        Parameters
+        ----------
+        capacity: memory capacity, int
+        Returns
+        -------
+        class
+    """
 
     def __init__(self, capacity):
         self.capacity = capacity
@@ -73,8 +90,8 @@ def main(args):
     args.num_states = int(env.nS)
     args.num_actions = int(env.nA)
     args.use_cuda = data_utils.use_cuda
-    memory = ReplayMemory(args.memo_capacity)
 
+    memory = ReplayMemory(args.memo_capacity)
     model = model_zoo.DQN(args)
     if data_utils.use_cuda:
         model.cuda()
@@ -90,20 +107,19 @@ def main(args):
         current_state = env.reset()
         done = False
         while not done:
+            # Take and evaluate a new step
             current_vec = model(np.asarray(
                 current_state, dtype=int) * np.ones(1, dtype=int), False)
             action = model.select_action(current_vec)
             steps += 1
             next_state, reward, done = env.step(action)
             total_reward += reward
-            # debug
-            # if steps==args.batch_size:
-            #     done=True
-            # if done:
-            #     next_state = args.grid_shape * args.grid_shape - 1
+
             memory.push(current_state, action, next_state, reward)
             current_state = next_state
+            # When ready to sample
             if len(memory.memory) >= args.batch_size:
+                # Sample current state, action, next state, reward from memory
                 transitions = np.asarray(memory.sample(args.batch_size))
                 terminal = args.grid_shape * args.grid_shape - 1
                 current_batch = transitions[:, 0].astype(int)
@@ -113,19 +129,24 @@ def main(args):
                 reward_batch = Variable(
                     torch.from_numpy(transitions[:, 3])).type(data_utils.FloatTensor)
 
+                # Mark non terminal step
                 non_final_mask = data_utils.ByteTensor(
                     (next_batch != terminal).tolist())
                 non_final_states = next_batch[next_batch != terminal]
+                # Calculate action values
                 current_Q_vec = model(current_batch, False).gather(1, action_batch)
                 next_Q_vec = Variable(torch.zeros(
                     args.batch_size).type(data_utils.Tensor))
                 next_Q_vec[non_final_mask] = model(non_final_states, True).max(1)[0]
                 next_Q_vec.volatile = False
+                # Calculate target matrix
                 target = next_Q_vec * args.gamma + reward_batch
+                # Optimize loss function
                 loss = F.smooth_l1_loss(current_Q_vec, target)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                # Record
                 if (done or steps == 5000):
                     if torch.cuda.is_available():
                         print("==============")
@@ -170,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument('--memo_capacity', type=int,
                         default=10000, help='Memory capacity')
     parser.add_argument('--grid_shape', type=int,
-                        default=5, help='grid shape')
+                        default=10, help='grid shape')
     parser.add_argument('--batch_size', type=int,
                         default=128, help='Batch Size')
     args = parser.parse_args()
