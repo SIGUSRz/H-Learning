@@ -19,7 +19,7 @@ class Model(nn.Module):
         # self.history_len = args.history_len
         self.num_states = args.num_states
         self.num_actions = args.num_actions
-        self.use_cuda = args.use_cuda
+        self.use_cuda = data_utils.use_cuda
 
     def print_model(self):
         print("<--------Model-------->")
@@ -54,10 +54,11 @@ class LinearApprox(Model):
     def __init__(self, args):
         super(LinearApprox, self).__init__(args)
         self.hidden_dim = args.hidden_dim
-        self.bias_init = args.bias_init
-        self.weight_init = args.weight_init
-        self.epsilon = args.epsilon
+        self.eps_start = args.eps_start
+        self.eps_end = args.eps_end
+        self.eps_decay = args.eps_decay
         self.output = nn.Linear(self.num_states, self.num_actions, bias=False)
+        self._steps = 0
 
         self._reset()
 
@@ -80,13 +81,18 @@ class LinearApprox(Model):
         """
         return torch.eye(self.num_states)[state - 1].view(1, self.num_states)
 
-    def select_action(self, Q_vec, epsilon):
-        explore = np.random.choice(
-            (0, 1), p=[epsilon, 1 - epsilon])
-        if explore:
-            return np.random.choice(self.num_actions)
+    def select_action(self, Q_vec):
+        sample = np.random.random()
+        eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
+            np.exp(-1. * self._steps / self.eps_decay)
+        self._steps += 1
+        if sample > eps_threshold:
+            if self.use_cuda:
+                return int(Q_vec.data.cpu().max(1)[1].numpy())
+            else:
+                return int(Q_vec.data.max(1)[1].numpy())
         else:
-            return int(Q_vec.max(1)[1].data.numpy())
+            return int(np.random.choice(self.num_actions))
 
 
 class MLP(Model):
@@ -97,7 +103,6 @@ class MLP(Model):
         self.fc2 = nn.Linear(self.hidden_dim, self.hidden_dim)
         self.output = nn.Linear(self.hidden_dim, self.num_actions)
         self.relu = nn.ReLU()
-        self.tanh = nn.Tanh()
 
         self._reset()
 
@@ -149,7 +154,8 @@ class DQN(Model):
         pass
 
     def forward(self, state, flag):
-        x = Variable(torch.from_numpy(self._encode_state(state)), volatile=flag).type(data_utils.Tensor)
+        x = Variable(torch.from_numpy(self._encode_state(state)),
+                     volatile=flag).type(data_utils.Tensor)
         if self.use_cuda:
             x.cuda()
         x = F.relu(self.conv1(x))

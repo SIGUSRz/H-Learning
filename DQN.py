@@ -134,10 +134,12 @@ def main(args):
                     (next_batch != terminal).tolist())
                 non_final_states = next_batch[next_batch != terminal]
                 # Calculate action values
-                current_Q_vec = model(current_batch, False).gather(1, action_batch)
+                current_Q_vec = model(
+                    current_batch, False).gather(1, action_batch)
                 next_Q_vec = Variable(torch.zeros(
                     args.batch_size).type(data_utils.Tensor))
-                next_Q_vec[non_final_mask] = model(non_final_states, True).max(1)[0]
+                next_Q_vec[non_final_mask] = model(
+                    non_final_states, True).max(1)[0]
                 next_Q_vec.volatile = False
                 # Calculate target matrix
                 target = next_Q_vec * args.gamma + reward_batch
@@ -154,7 +156,8 @@ def main(args):
                         print("Loss: %s" % str(loss.data.cpu().numpy()))
                         floss.write("==============\n")
                         floss.write("Finished at step: %d\n" % steps)
-                        floss.write(("Loss: %s\n" % str(loss.data.cpu().numpy())))
+                        floss.write(("Loss: %s\n" %
+                                     str(loss.data.cpu().numpy())))
                     else:
                         print("==============")
                         print("Finished at step: %d" % steps)
