@@ -1,4 +1,5 @@
 import time
+import copy
 import numpy as np
 import argparse
 import random
@@ -29,11 +30,11 @@ def render_single(model, env):
         time.sleep(0.25)
         if torch.cuda.is_available():
             state_vec = model(np.asarray(state, dtype=int)
-                              * np.ones(1, dtype=int))
+                              * np.ones(1, dtype=int), False)
             action = int(state_vec.data.cpu().max(1)[1].numpy())
         else:
             state_vec = model(np.asarray(state, dtype=int)
-                              * np.ones(1, dtype=int))
+                              * np.ones(1, dtype=int), False)
             action = int(state_vec.data.max(1)[1].numpy())
         state, reward, done = env.step(action)
         episode_reward += reward
@@ -85,18 +86,21 @@ def main(args):
     for i in range(args.num_episodes):
         steps = 0
         total_reward = 0
-        print("Episode: %d" % i)
+        print("Episode: %d" % (i + 1))
         current_state = env.reset()
         done = False
         while not done:
             current_vec = model(np.asarray(
-                current_state, dtype=int) * np.ones(1, dtype=int))
+                current_state, dtype=int) * np.ones(1, dtype=int), False)
             action = model.select_action(current_vec)
             steps += 1
             next_state, reward, done = env.step(action)
             total_reward += reward
-            if done:
-                next_state = None
+            # debug
+            # if steps==args.batch_size:
+            #     done=True
+            # if done:
+            #     next_state = args.grid_shape * args.grid_shape - 1
             memory.push(current_state, action, next_state, reward)
             current_state = next_state
             if len(memory.memory) >= args.batch_size:
@@ -108,34 +112,42 @@ def main(args):
                 reward_batch = Variable(
                     torch.from_numpy(transitions[:, 3])).float()
 
-                flag = (next_batch != None)
                 non_final_mask = data_utils.ByteTensor(
-                    flag.astype(int).tolist())
+                    (next_batch != args.grid_shape * args.grid_shape - 1).tolist())
                 non_final_states = next_batch[next_batch != None]
-                current_Q_vec = model(current_batch).gather(1, action_batch)
+                current_Q_vec = model(current_batch, False).gather(1, action_batch)
                 next_Q_vec = Variable(torch.zeros(
                     args.batch_size).type(data_utils.Tensor))
-                next_Q_vec[non_final_mask] = model(non_final_states).max(1)[0]
+                next_Q_vec[non_final_mask] = model(non_final_states, True).max(1)[0]
+                next_Q_vec.volatile = False
                 target = next_Q_vec * args.gamma + reward_batch
                 loss = F.smooth_l1_loss(current_Q_vec, target)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                if (steps % 500 == 0):
+                if (done or steps == 5000):
                     if torch.cuda.is_available():
-                        print("Loss: ", steps, loss)
-                        floss.write("Step: %d Loss: %s\n" %
-                                    (steps, str(loss.data.cpu().numpy())))
+                        print("==============")
+                        print("Finished at step: %d" % steps)
+                        print("Loss: %s" % str(loss.data.cpu().numpy()))
+                        floss.write("==============\n")
+                        floss.write("Finished at step: %d\n" % steps)
+                        floss.write(("Loss: %s\n" % str(loss.data.cpu().numpy())))
                     else:
-                        print("Loss: ", steps, loss)
-                        floss.write("Step: %d Loss: %s\n" %
-                                    (steps, str(loss.data.numpy())))
-                if (steps % 2500 == 0):
+                        print("==============")
+                        print("Finished at step: %d" % steps)
+                        print("Loss: %s" % str(loss.data.numpy()))
+                        floss.write("==============\n")
+                        floss.write("Finished at step: %d\n" % steps)
+                        floss.write(("Loss: %s\n" % str(loss.data.numpy())))
+                if (steps == 5000):
                     break
-        print("Finish at ", steps)
+                # break # debug
         print("Reward: ", total_reward)
-        floss.write("Finished at: %d\n" % steps)
+        print('==============')
         floss.write("Reward: %s\n" % str(total_reward))
+        floss.write("==============\n")
+        # break #debug
     floss.close()
     render_single(model, env)
 
@@ -143,7 +155,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_episodes', type=int,
-                        default=1000, help='Number of episodes to train')
+                        default=50, help='Number of episodes to train')
     parser.add_argument('--gamma', type=float, default=0.99,
                         help='Decay rate of reward function')
     parser.add_argument('--lr', type=float, default=0.1,

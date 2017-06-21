@@ -152,9 +152,8 @@ class DQN(Model):
     def _init_weights(self):
         pass
 
-    def forward(self, state):
-        x = Variable(torch.from_numpy(self._encode_state(state))
-                     ).type(data_utils.Tensor)
+    def forward(self, state, flag):
+        x = Variable(torch.from_numpy(self._encode_state(state)), volatile=flag).type(data_utils.Tensor)
         if self.use_cuda:
             x.cuda()
         x = F.relu(self.conv1(x))
