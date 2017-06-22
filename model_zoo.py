@@ -103,8 +103,9 @@ class MLP(Model):
         self.eps_decay = args.eps_decay
         self.hidden_dim = args.hidden_dim
         self.fc1 = nn.Linear(2, self.num_states, bias=False)
-        self.fc2 = nn.Linear(self.num_states, self.hidden_dim, bias=False)
-        self.output = nn.Linear(self.hidden_dim, self.num_actions, bias=False)
+        # self.fc2 = nn.Linear(self.num_states, self.hidden_dim, bias=False)
+        # self.output = nn.Linear(self.hidden_dim, self.num_actions, bias=False)
+        self.output = nn.Linear(self.num_states, self.num_actions, bias=False)
         self.relu = nn.ReLU()
         self._steps = 0
 
@@ -117,7 +118,7 @@ class MLP(Model):
         x = Variable(torch.from_numpy(self._encode_state(state)),
                      volatile=flag).type(data_utils.Tensor)
         x = self.fc1(x)
-        x = self.fc2(x)
+        # x = self.fc2(x)
         return self.output(x)
 
     def _encode_state(self, state):

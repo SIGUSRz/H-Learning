@@ -56,8 +56,7 @@ def main(args):
             next_Q_vec = np.zeros((1, args.num_actions))
             next_Q_vec[0, action] = reward + \
                 args.gamma * next_Q.max(1)[0].data.numpy()
-            next_Q_vec = Variable(torch.Tensor.float(
-                torch.from_numpy(next_Q_vec)))
+            next_Q_vec = Variable(torch.from_numpy(next_Q_vec)).type(data_utils.FloatTensor)
             # Gradient Update
             criterion = nn.MSELoss()
             loss = criterion(current_Q_vec[0, action], next_Q_vec[0, action])
