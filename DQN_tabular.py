@@ -42,11 +42,11 @@ def render_single(model, env):
         if torch.cuda.is_available():
             state_vec = model(np.asarray(state, dtype=int)
                               * np.ones(1, dtype=int), False)
-            action = int(state_vec.data.cpu().max(1)[1].numpy())
+            action = model.select_action(state_vec)
         else:
             state_vec = model(np.asarray(state, dtype=int)
                               * np.ones(1, dtype=int), False)
-            action = int(state_vec.data.max(1)[1].numpy())
+            action = model.select_action(state_vec)
         state, reward, done = env.step(action)
         episode_reward += reward
     env.step(action)
@@ -195,7 +195,7 @@ if __name__ == '__main__':
     parser.add_argument('--memo_capacity', type=int,
                         default=10000, help='Memory capacity')
     parser.add_argument('--grid_shape', type=int,
-                        default=5, help='grid shape')
+                        default=6, help='grid shape')
     parser.add_argument('--batch_size', type=int,
                         default=128, help='Batch Size')
     args = parser.parse_args()

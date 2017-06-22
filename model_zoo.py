@@ -19,6 +19,7 @@ class Model(nn.Module):
         # self.history_len = args.history_len
         self.num_states = args.num_states
         self.num_actions = args.num_actions
+        self.grid_shape = (args.grid_shape, args.grid_shape)
         self.use_cuda = data_utils.use_cuda
 
     def print_model(self):
@@ -65,8 +66,8 @@ class LinearApprox(Model):
     def _init_weights(self):
         pass
 
-    def forward(self, state, flag):
-        state_vec = Variable(self._encode_state(state), volatile=flag).type(data_utils.Tensor)
+    def forward(self, state):
+        state_vec = Variable(self._encode_state(state)).type(data_utils.FloatTensor)
         return self.output(state_vec)
 
     def _encode_state(self, state):
@@ -94,18 +95,15 @@ class LinearApprox(Model):
             return int(np.random.choice(self.num_actions))
 
 
-class MLP(Model):
+class DQN_approx(Model):
     def __init__(self, args):
-        super(MLP, self).__init__(args)
-        self.grid_shape = (args.grid_shape, args.grid_shape)
+        super(DQN_approx, self).__init__(args)
         self.eps_start = args.eps_start
         self.eps_end = args.eps_end
         self.eps_decay = args.eps_decay
         self.hidden_dim = args.hidden_dim
-        self.fc1 = nn.Linear(2, self.num_states, bias=False)
-        # self.fc2 = nn.Linear(self.num_states, self.hidden_dim, bias=False)
-        # self.output = nn.Linear(self.hidden_dim, self.num_actions, bias=False)
-        self.output = nn.Linear(self.num_states, self.num_actions, bias=False)
+        self.fc1 = nn.Linear(2, self.num_actions, bias=False)
+        self.output = nn.Linear(self.num_actions, self.num_actions, bias=False)
         self.relu = nn.ReLU()
         self._steps = 0
 
@@ -118,8 +116,8 @@ class MLP(Model):
         x = Variable(torch.from_numpy(self._encode_state(state)),
                      volatile=flag).type(data_utils.Tensor)
         x = self.fc1(x)
-        # x = self.fc2(x)
         return self.output(x)
+        # return x
 
     def _encode_state(self, state):
         """Create One-hot Vector of Current State
@@ -148,11 +146,10 @@ class MLP(Model):
 
 class DQN_tabular(Model):
     def __init__(self, args):
-        super(DQN, self).__init__(args)
-        self.grid_shape = (args.grid_shape, args.grid_shape)
+        super(DQN_tabular, self).__init__(args)
         self.conv1 = nn.Conv2d(1, 4, kernel_size=3, stride=1)
         self.conv2 = nn.Conv2d(4, 4, kernel_size=3, stride=1)
-        self.output = nn.Linear((self.grid_shape[0] - 2) ** 2 * 4, 9)
+        self.output = nn.Linear((self.grid_shape[0] - 4) ** 2 * 4, 9)
         self.eps_start = args.eps_start
         self.eps_end = args.eps_end
         self.eps_decay = args.eps_decay
