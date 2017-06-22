@@ -27,7 +27,7 @@ def render_single_Q(env, model):
     while not done:
         env.render(animation=(not data_utils.use_cuda))
         time.sleep(0.5)
-        Q_vec = model(state)
+        Q_vec = model(state, False)
         action = int(Q_vec.max(1)[1].data.numpy())
         state, reward, done = env.step(action)
         episode_reward += reward
