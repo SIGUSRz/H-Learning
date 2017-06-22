@@ -66,7 +66,7 @@ class LinearApprox(Model):
         pass
 
     def forward(self, state):
-        state_vec = Variable(self._encode_state(state))
+        state_vec = Variable(self._encode_state(state)).type(data_utils.Tensor)
         return self.output(state_vec)
 
     def _encode_state(self, state):

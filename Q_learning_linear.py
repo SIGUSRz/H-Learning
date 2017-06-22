@@ -49,21 +49,72 @@ def main(args):
         current_state = env.reset()
         done = False
         while not done:
-            current_Q_vec = model(current_state)
-            action = model.select_action(current_Q_vec)
+            current_vec = model(np.asarray(
+                current_state, dtype=int) * np.ones(1, dtype=int), False)
+            action = model.select_action(current_vec)
+            steps += 1
             next_state, reward, done = env.step(action)
-            next_Q = model(next_state)
-            next_Q_vec = np.zeros((1, args.num_actions))
-            next_Q_vec[0, action] = reward + \
-                args.gamma * next_Q.max(1)[0].data.numpy()
-            next_Q_vec = Variable(torch.from_numpy(next_Q_vec)).type(data_utils.FloatTensor)
-            # Gradient Update
-            criterion = nn.MSELoss()
-            loss = criterion(current_Q_vec[0, action], next_Q_vec[0, action])
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            total_reward += reward
+
+            memory.push(current_state, action, next_state, reward)
             current_state = next_state
+            # When ready to sample
+            if len(memory.memory) >= args.batch_size:
+                # Sample current state, action, next state, reward from memory
+                transitions = np.asarray(memory.sample(args.batch_size))
+                terminal = args.grid_shape * args.grid_shape - 1
+                current_batch = transitions[:, 0].astype(int)
+                action_batch = Variable(torch.from_numpy(
+                    transitions[:, 1].astype(int))).type(data_utils.LongTensor).unsqueeze(1)
+                next_batch = transitions[:, 2].astype(int)
+                reward_batch = Variable(
+                    torch.from_numpy(transitions[:, 3])).type(data_utils.FloatTensor)
+
+                # Mark non terminal step
+                non_final_mask = data_utils.ByteTensor(
+                    (next_batch != terminal).tolist())
+                non_final_states = next_batch[next_batch != terminal]
+                # Calculate action values
+                current_Q_vec = model(
+                    current_batch, False).gather(1, action_batch)
+                next_Q_vec = Variable(torch.zeros(
+                    args.batch_size).type(data_utils.Tensor))
+                next_Q_vec[non_final_mask] = model(
+                    non_final_states, True).max(1)[0]
+                next_Q_vec.volatile = False
+                # Calculate target matrix
+                target = next_Q_vec * args.gamma + reward_batch
+                # Optimize loss function
+                loss = F.smooth_l1_loss(current_Q_vec, target)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                # Record
+                if (done or steps == 5000):
+                    if torch.cuda.is_available():
+                        print("==============")
+                        print("Finished at step: %d" % steps)
+                        print("Loss: %s" % str(loss.data.cpu().numpy()))
+                        floss.write("==============\n")
+                        floss.write("Finished at step: %d\n" % steps)
+                        floss.write(("Loss: %s\n" %
+                                     str(loss.data.cpu().numpy())))
+                    else:
+                        print("==============")
+                        print("Finished at step: %d" % steps)
+                        print("Loss: %s" % str(loss.data.numpy()))
+                        floss.write("==============\n")
+                        floss.write("Finished at step: %d\n" % steps)
+                        floss.write(("Loss: %s\n" % str(loss.data.numpy())))
+                if (steps == 5000):
+                    break
+                # break # debug
+        print("Reward: ", total_reward)
+        print('==============')
+        floss.write("Reward: %s\n" % str(total_reward))
+        floss.write("==============\n")
+        # break #debug
+    floss.close()
     render_single_Q(env, model)
 
 
