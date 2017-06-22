@@ -92,7 +92,7 @@ def main(args):
     args.use_cuda = data_utils.use_cuda
 
     memory = ReplayMemory(args.memo_capacity)
-    model = model_zoo.DQN_tabular(args)
+    model = model_zoo.MLP(args)
     if data_utils.use_cuda:
         model.cuda()
     optimizer = optim.RMSprop(model.parameters())
@@ -104,6 +104,7 @@ def main(args):
         steps = 0
         total_reward = 0
         print("Episode: %d" % (i + 1))
+        floss.write("Episode: %d\n" % (i + 1))
         current_state = env.reset()
         done = False
         while not done:
@@ -181,9 +182,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_episodes', type=int,
                         default=500, help='Number of episodes to train')
+    parser.add_argument('--hidden_dim', type=int,
+                        default=64, help='Hidden layer dimension')
     parser.add_argument('--gamma', type=float, default=0.99,
                         help='Decay rate of reward function')
-    parser.add_argument('--lr', type=float, default=0.1,
+    parser.add_argument('--lr', type=float, default=0.05,
                         help='Learning rate of update')
     parser.add_argument('--eps_start', type=float,
                         default=0.9, help="Epsilon init value")
@@ -194,7 +197,7 @@ if __name__ == '__main__':
     parser.add_argument('--memo_capacity', type=int,
                         default=10000, help='Memory capacity')
     parser.add_argument('--grid_shape', type=int,
-                        default=5, help='grid shape')
+                        default=4, help='grid shape')
     parser.add_argument('--batch_size', type=int,
                         default=128, help='Batch Size')
     args = parser.parse_args()

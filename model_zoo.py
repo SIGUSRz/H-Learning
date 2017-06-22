@@ -67,8 +67,7 @@ class LinearApprox(Model):
 
     def forward(self, state):
         state_vec = Variable(self._encode_state(state))
-        Q_vec = self.output(state_vec)
-        return Q_vec
+        return self.output(state_vec)
 
     def _encode_state(self, state):
         """Create One-hot Vector of Current State
@@ -98,23 +97,28 @@ class LinearApprox(Model):
 class MLP(Model):
     def __init__(self, args):
         super(MLP, self).__init__(args)
-        self.epsilon = args.epsilon
-        self.fc1 = nn.Linear(self.num_states, self.hidden_dim)
-        self.fc2 = nn.Linear(self.hidden_dim, self.hidden_dim)
-        self.output = nn.Linear(self.hidden_dim, self.num_actions)
+        self.grid_shape = (args.grid_shape, args.grid_shape)
+        self.eps_start = args.eps_start
+        self.eps_end = args.eps_end
+        self.eps_decay = args.eps_decay
+        self.hidden_dim = args.hidden_dim
+        self.fc1 = nn.Linear(2, self.num_states, bias=False)
+        self.fc2 = nn.Linear(self.num_states, self.hidden_dim, bias=False)
+        self.output = nn.Linear(self.hidden_dim, self.num_actions, bias=False)
         self.relu = nn.ReLU()
+        self._steps = 0
 
         self._reset()
 
     def _init_weights(self):
         pass
 
-    def forward(self, state):
-        state_vec = Variable(self._encode_state(state))
-        state_vec = self.relu(self.fc1(state_vec))
-        state_vec = self.relu(self.fc2(state_vec))
-        Q_vec = self.output(state_vec)
-        return Q_vec, self._eps_greedy_select(Q_vec)
+    def forward(self, state, flag):
+        x = Variable(torch.from_numpy(self._encode_state(state)),
+                     volatile=flag).type(data_utils.Tensor)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        return self.output(x)
 
     def _encode_state(self, state):
         """Create One-hot Vector of Current State
@@ -125,15 +129,20 @@ class MLP(Model):
             -------
             One-hot torch FloatTensor: (1, num_states)
         """
-        return torch.eye(self.num_states)[state - 1].view(1, self.num_states)
+        return np.array(np.unravel_index(state, self.grid_shape)).reshape(-1, 2)
 
-    def _eps_greedy_select(self, Q_vec):
-        explore = np.random.choice(
-            (0, 1), p=[self.epsilon, 1 - self.epsilon])
-        if explore:
-            return np.random.choice(self.num_actions)
+    def select_action(self, Q_vec):
+        sample = np.random.random()
+        eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
+            np.exp(-1. * self._steps / self.eps_decay)
+        self._steps += 1
+        if sample > eps_threshold:
+            if self.use_cuda:
+                return int(Q_vec.data.cpu().max(1)[1].numpy())
+            else:
+                return int(Q_vec.data.max(1)[1].numpy())
         else:
-            return int(Q_vec.max(1)[1].data.numpy())
+            return int(np.random.choice(self.num_actions))
 
 
 class DQN_tabular(Model):
@@ -158,8 +167,8 @@ class DQN_tabular(Model):
                      volatile=flag).type(data_utils.Tensor)
         if self.use_cuda:
             x.cuda()
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
+        x = self.conv1(x)
+        x = self.conv2(x)
         Q_vec = self.output(x.view(x.size(0), -1))
         return Q_vec
 

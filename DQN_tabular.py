@@ -104,6 +104,7 @@ def main(args):
         steps = 0
         total_reward = 0
         print("Episode: %d" % (i + 1))
+        floss.write("Episode: %d\n" % (i + 1))
         current_state = env.reset()
         done = False
         while not done:
