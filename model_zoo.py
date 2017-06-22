@@ -65,8 +65,8 @@ class LinearApprox(Model):
     def _init_weights(self):
         pass
 
-    def forward(self, state):
-        state_vec = Variable(self._encode_state(state)).type(data_utils.Tensor)
+    def forward(self, state, flag):
+        state_vec = Variable(self._encode_state(state), volatile=flag).type(data_utils.Tensor)
         return self.output(state_vec)
 
     def _encode_state(self, state):
