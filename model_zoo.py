@@ -116,8 +116,8 @@ class MLP(Model):
     def forward(self, state, flag):
         x = Variable(torch.from_numpy(self._encode_state(state)),
                      volatile=flag).type(data_utils.Tensor)
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
+        x = self.fc1(x)
+        x = self.fc2(x)
         return self.output(x)
 
     def _encode_state(self, state):
