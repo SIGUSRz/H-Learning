@@ -10,6 +10,7 @@ args.num_hunters = 2
 args.num_rabbits = 2
 args.step_reward = -1
 args.catch_reward = 10
+args.done_reward = 100
 henv = HuntingEnv(args)
 
 locations = np.array([[1, 3, 1], [1, 2, 2], [1, 4, 2], [1, 0, 0]])

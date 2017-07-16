@@ -20,6 +20,7 @@ class HuntingEnv(object):
         self.dead_agents = 0 # number of hunters and rabbits not in game
         self.step_reward = args.step_reward
         self.catch_reward = args.catch_reward
+        self.done_reward = args.done_reward
         self.nS = np.prod(self.shape)
         self.nA = 9
         self.A = np.array([[i, j] for i in [-1, 0, 1] for j in [-1, 0, 1]])
@@ -99,6 +100,7 @@ class HuntingEnv(object):
             self.state = self.state[self.state[:, 0] != 0]
             self.num_hunters -= catch_flag
             self.num_rabbits -= catch_flag
+            self.size -= 2 * catch_flag
         else:
             reward = self.step_reward
         return reward
@@ -116,4 +118,5 @@ class HuntingEnv(object):
         done = False
         if self.num_hunters == 0 or self.num_rabbits == 0:
             done = True
+            reward = self.done_reward
         return self.state_to_map(self.state), reward, done
