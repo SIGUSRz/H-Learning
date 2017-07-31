@@ -42,7 +42,8 @@ class Model(nn.Module):
             -------
         """
         self._init_weights()
-        self.print_model()
+        self.print
+_model()
 
 
 class LinearApprox(Model):
@@ -193,6 +194,53 @@ class DQN_tabular(Model):
                 return int(Q_vec.data.max(1)[1].numpy())
         else:
             return int(np.random.choice(self.num_actions))
+
+
+class MA_hunter(Model):
+    def __init__(self, args, num_hunters):
+        super(MA_hunter, self).__init__(args)
+        self.num_hunters = num_hunters
+        self.eps_start = args.eps_start
+        self.eps_end = args.eps_end
+        self.eps_decay = args.eps_decay
+        self.hidden_dim = args.hidden_dim
+        self.fc1 = nn.Linear(2 * self.num_hunters, self.num_actions * self.num_hunters, bias=False)
+        self.output = nn.Linear(self.num_actions * self.num_hunters, self.num_actions * self.num_hunters, bias=False)
+        self.relu = nn.ReLU()
+        self._steps = 0
+
+        self._reset()
+
+    def _init_weights(self):
+        pass
+
+    def forward(self, state, flag):
+        n = state.shape[0]
+        x = Variable(torch.from_numpy(self._encode_state(state)),
+                     volatile=flag).type(data_utils.Tensor)
+        x = self.fc1(x)
+        return self.output(x).view(n, self.num_hunters, -1)
+        # return x
+
+    def _encode_state(self, state):
+        state = state[:, :, :]
+        state = state.reshape(state.shape[0], -1)
+        return state
+
+
+    def select_action(self, Q_vec):
+        sample = np.random.random()
+        eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
+            np.exp(-1. * self._steps / self.eps_decay)
+        self._steps += 1
+        # if sample > eps_threshold:
+        if True:
+            if self.use_cuda:
+                return Q_vec.data.cpu().max(1)[1].numpy().reshape(self.num_hunters, )
+            else:
+                return Q_vec.data.max(1)[1].numpy().reshape(self.num_hunters, )
+        else:
+            return np.random.randint(self.num_actions, size=(self.num_hunters, ))
 
 
 class Policy(Model):

@@ -2,3 +2,5 @@
 .DS_store
 __pycache__
 loss.txt
+log.txt
+flog.txt
