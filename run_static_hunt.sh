@@ -1,1 +1,0 @@
-python Hunt_Static_Rabbit.py --num_hunters=4 --num_rabbits=4 --step_reward=-1 --catch_reward=10 --fall_reward=-10 --done_reward=100 --num_episodes=100 --hidden_dim=64 --gamma=0.99 --lr=0.05 --eps_start=0.9 --eps_end=0.05 --eps_decay=200 --memo_capacity=10000 --grid_shape=8 --batch_size=32
