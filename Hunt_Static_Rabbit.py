@@ -258,7 +258,7 @@ if __name__ == '__main__':
     parser.add_argument('--grid_shape', type=int,
                         default=8, help='grid shape')
     parser.add_argument('--batch_size', type=int,
-                        default=3, help='Batch Size')
+                        default=32, help='Batch Size')
     args = parser.parse_args()
 
     main(args)

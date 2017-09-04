@@ -42,8 +42,7 @@ class Model(nn.Module):
             -------
         """
         self._init_weights()
-        self.print
-_model()
+        self.print_model()
 
 
 class LinearApprox(Model):
