@@ -147,8 +147,6 @@ def main(args):
             # Reshape state vector to [1, num_agents, 2] for 1 sample of state as input
             current_vec = current_model(current_state[np.newaxis, :], False)
             action = current_model.select_action(current_vec[0, :])
-            print(action)
-            done = True
             steps += 1
             next_state, reward, done, dead_hunters, dead_rabbits = env.step(
                 action)
@@ -190,8 +188,12 @@ def main(args):
                     current_batch, False).gather(2, action_batch).squeeze(2)
                 next_Q_vec = Variable(torch.zeros(
                     args.batch_size, current_model.num_hunters, args.num_actions).type(data_utils.Tensor))
-                next_Q_vec = current_model(
-                    next_batch, True).max(2)[0].squeeze(2)
+                if data_utils.use_cuda:
+                    next_Q_vec = current_model(
+                        next_batch, True).max(2)[0].squeeze(2)
+                else:
+                    next_Q_vec = current_model(
+                        next_batch, True).max(2)[0]
                 next_Q_vec.volatile = False
                 # Calculate target matrix
                 target = next_Q_vec * args.gamma + \
@@ -225,7 +227,7 @@ def main(args):
         floss.write("==============\n")
         # break #debug
     floss.close()
-    render_single(model, args)
+    # render_single(model, args)
 
 
 if __name__ == '__main__':
@@ -243,7 +245,7 @@ if __name__ == '__main__':
     parser.add_argument('--done_reward', type=int,
                         default=100, help='Reward for a normal step')
     parser.add_argument('--num_episodes', type=int,
-                        default=100, help='Number of episodes to train')
+                        default=5, help='Number of episodes to train')
     parser.add_argument('--hidden_dim', type=int,
                         default=64, help='Hidden layer dimension')
     parser.add_argument('--gamma', type=float, default=0.99,
