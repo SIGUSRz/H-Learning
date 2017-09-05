@@ -126,7 +126,6 @@ def main(args):
     if data_utils.use_cuda:
         for m in model.zoo:
             m.cuda()
-
     open('loss.txt', 'w').close()
     floss = open('loss.txt', 'a')
 
@@ -135,9 +134,9 @@ def main(args):
         total_reward = 0
         print("Episode: %d" % (i + 1))
         floss.write("Episode: %d\n" % (i + 1))
-        # locations = np.array([[1, 3, 1], [1, 2, 2], [1, 4, 2], [1, 0, 0]])
-        # current_state = env.reset(locations)
-        current_state = env.reset()
+        locations = np.array([[1, 3, 1], [1, 2, 2], [1, 4, 2], [1, 0, 0], [1, 4, 4], [1, 1, 3], [1, 0, 2], [1, 2, 4]])
+        current_state = env.reset(locations)
+        # current_state = env.reset()
         mod_idx = args.num_hunters - 1
         done = False
         while (not done and steps < 2000):
@@ -148,6 +147,8 @@ def main(args):
             # Reshape state vector to [1, num_agents, 2] for 1 sample of state as input
             current_vec = current_model(current_state[np.newaxis, :], False)
             action = current_model.select_action(current_vec[0, :])
+            print(action)
+            done = True
             steps += 1
             next_state, reward, done, dead_hunters, dead_rabbits = env.step(
                 action)
