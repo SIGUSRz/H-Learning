@@ -188,7 +188,7 @@ def main(args):
                     current_batch, False).gather(2, action_batch).squeeze(2)
                 next_Q_vec = Variable(torch.zeros(
                     args.batch_size, current_model.num_hunters, args.num_actions).type(data_utils.Tensor))
-                if data_utils.use_cuda:
+                if not data_utils.use_cuda:
                     next_Q_vec = current_model(
                         next_batch, True).max(2)[0].squeeze(2)
                 else:
