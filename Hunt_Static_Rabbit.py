@@ -124,7 +124,8 @@ def main(args):
 
     model = Model_Set(args)
     if data_utils.use_cuda:
-        model.cuda()
+        for m in model.zoo:
+            m.cuda()
 
     open('loss.txt', 'w').close()
     floss = open('loss.txt', 'a')
