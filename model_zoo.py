@@ -203,8 +203,8 @@ class MA_hunter(Model):
         self.eps_end = args.eps_end
         self.eps_decay = args.eps_decay
         self.hidden_dim = args.hidden_dim
-        self.fc1 = nn.Linear(2 * self.num_hunters, self.num_actions * self.num_hunters, bias=False)
-        self.output = nn.Linear(self.num_actions * self.num_hunters, self.num_actions * self.num_hunters, bias=False)
+        self.fc1 = nn.Linear(2 * self.num_hunters, self.hidden_dim * self.num_hunters, bias=False)
+        self.output = nn.Linear(self.hidden_dim * self.num_hunters, self.num_actions * self.num_hunters, bias=False)
         self.relu = nn.ReLU()
         self._steps = 0
 

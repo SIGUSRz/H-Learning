@@ -144,6 +144,7 @@ def main(args):
             current_model = model.zoo[mod_idx]
             current_memo = model.memory[mod_idx]
             current_optim = model.optimizer[mod_idx]
+            # Reshape state vector to [1, num_agents, 2] for 1 sample of state as input
             current_vec = current_model(current_state[np.newaxis, :], False)
             action = current_model.select_action(current_vec[0, :])
             steps += 1
