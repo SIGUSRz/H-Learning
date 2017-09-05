@@ -32,8 +32,8 @@ def render_single(model, args):
     done = False
     action = None
     steps = 0
-    open('flog.txt', 'w').close()
-    flog = open('flog.txt', 'a')
+    open('hlog.txt', 'w').close()
+    hlog = open('hlog.txt', 'a')
     # Wheter to visualize the step
 
     while (not done and steps < 1000):
@@ -45,9 +45,9 @@ def render_single(model, args):
         current_model = model.zoo[mod_idx]
         current_memo = model.memory[mod_idx]
         current_optim = model.optimizer[mod_idx]
-        flog.write("Hunter: \n")
-        flog.write(np.array_str(state[:args.num_hunters, :]))
-        flog.write("\n")
+        hlog.write("Hunter: \n")
+        hlog.write(np.array_str(state[:args.num_hunters, :]))
+        hlog.write("\n")
         if data_utils.use_cuda:
             state_vec = current_model(state[np.newaxis, :], False)
             action = current_model.select_action(state_vec[0])
@@ -59,16 +59,16 @@ def render_single(model, args):
         if(len(dead_hunters) > 0):
             print('Remove One')
             mod_idx -= len(dead_hunters)
-            flog.write("Dead Rabbit: \n")
+            hlog.write("Dead Rabbit: \n")
             for i in dead_rabbits:
-                flog.write(str(i[0]) + ' ' + np.array_str(i[1]))
-                flog.write("\n")
+                hlog.write(str(i[0]) + ' ' + np.array_str(i[1]))
+                hlog.write("\n")
     env.step(action)
     print("Final reward: %f" % episode_reward)
     f = open('loss.txt', 'a')
     f.write("Final Reward: %s\n" % str(episode_reward))
     f.close()
-    flog.close()
+    hlog.close()
 
 
 class ReplayMemory(object):
@@ -245,7 +245,7 @@ if __name__ == '__main__':
     parser.add_argument('--done_reward', type=int,
                         default=100, help='Reward for a normal step')
     parser.add_argument('--num_episodes', type=int,
-                        default=5, help='Number of episodes to train')
+                        default=100, help='Number of episodes to train')
     parser.add_argument('--hidden_dim', type=int,
                         default=64, help='Hidden layer dimension')
     parser.add_argument('--gamma', type=float, default=0.99,
